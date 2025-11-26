@@ -1,0 +1,17 @@
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/mapper/NewsMapper.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/config/DataSeeder.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/service/DrawResultService.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/entity/AiPrediction.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/entity/News.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/entity/DrawResult.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/controller/AiPredictionController.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/entity/LotteryType.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/mapper/AiPredictionMapper.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/mapper/DrawResultMapper.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/mapper/UserMapper.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/LotteryApplication.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/controller/NewsController.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/controller/DrawResultController.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/entity/User.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/service/NewsService.java
+/Users/wenzhou/Desktop/code/antigravity/Lottery/backend-java/src/main/java/com/lottery/service/AiPredictionService.java

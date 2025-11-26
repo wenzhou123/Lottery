@@ -1,0 +1,17 @@
+com/lottery/mapper/UserMapper.class
+com/lottery/LotteryApplication.class
+com/lottery/controller/DrawResultController.class
+com/lottery/entity/News.class
+com/lottery/mapper/NewsMapper.class
+com/lottery/service/NewsService.class
+com/lottery/config/DataSeeder.class
+com/lottery/entity/AiPrediction.class
+com/lottery/service/DrawResultService.class
+com/lottery/mapper/DrawResultMapper.class
+com/lottery/controller/NewsController.class
+com/lottery/service/AiPredictionService.class
+com/lottery/controller/AiPredictionController.class
+com/lottery/entity/User.class
+com/lottery/mapper/AiPredictionMapper.class
+com/lottery/entity/DrawResult.class
+com/lottery/entity/LotteryType.class

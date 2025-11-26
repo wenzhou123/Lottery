@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="header">
+    <text class="title">开奖大厅</text>
+  </view>
+  
+  <view class="lottery-card">
+    <view class="card-header">
+      <text>双色球 第2023135期</text>
+      <text class="date">2023-11-21</text>
+    </view>
+    <view class="balls">
+      <text class="ball red">02</text>
+      <text class="ball red">09</text>
+      <text class="ball red">11</text>
+      <text class="ball red">18</text>
+      <text class="ball red">25</text>
+      <text class="ball red">30</text>
+      <text class="ball blue">14</text>
+    </view>
+  </view>
+
+  <view class="ai-section">
+    <text class="section-title">AI智能预测</text>
+    <view class="prediction">
+      <text>推荐号码: 05 12 17 21 28 31 + 08</text>
+    </view>
+  </view>
+</view>

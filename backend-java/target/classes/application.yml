@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:lottery_db;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  mybatis:
+    mapper-locations: classpath:mapper/*.xml
+    type-aliases-package: com.lottery.entity
+  h2:
+    console:
+      enabled: true
+
+server:
+  port: 8081

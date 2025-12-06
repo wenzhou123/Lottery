@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(deploy.bat)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(docker-compose stop:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(cat:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

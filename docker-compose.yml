@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend-java
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - lottery-network
+
+  frontend:
+    build: ./frontend-web
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - lottery-network
+
+  ai:
+    build: ./backend-ai
+    ports:
+      - "8000:8000"
+    networks:
+      - lottery-network
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: lottery_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+    networks:
+      - lottery-network
+
+networks:
+  lottery-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

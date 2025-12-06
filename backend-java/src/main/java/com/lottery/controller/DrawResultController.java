@@ -22,4 +22,9 @@ public class DrawResultController {
     public List<DrawResult> getHistory(@RequestParam String code) {
         return drawResultService.getHistory(code);
     }
+
+    @GetMapping("/issue")
+    public DrawResult getByIssue(@RequestParam String code, @RequestParam String issueNumber) {
+        return drawResultService.getByIssue(code, issueNumber);
+    }
 }

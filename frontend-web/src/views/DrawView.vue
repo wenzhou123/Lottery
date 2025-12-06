@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { getLatestDraw, getAiPrediction, getDrawHistory } from '../api'
+import { getLatestDraw, getAiPrediction, getDrawHistory, getDrawByIssue } from '../api'
 
 const activeTab = ref('ssq')
 const latestDraw = ref(null)
@@ -8,6 +8,8 @@ const historyList = ref([])
 const showIssueSelector = ref(false)
 const aiPrediction = ref(null)
 const showCot = ref(true)
+const userThought = ref('')
+const isAnalyzing = ref(false)
 
 const loadData = async () => {
   try {
@@ -15,14 +17,22 @@ const loadData = async () => {
     const drawRes = await getLatestDraw(activeTab.value)
     latestDraw.value = drawRes.data
     console.log('Latest draw loaded:', latestDraw.value)
-    
+
     // Load history for dropdown
     const historyRes = await getDrawHistory(activeTab.value)
     historyList.value = historyRes.data
     console.log('History loaded:', historyList.value.length, 'items')
 
-    const aiRes = await getAiPrediction(activeTab.value)
-    aiPrediction.value = aiRes.data
+    // Load AI prediction separately with error handling
+    try {
+      const aiRes = await getAiPrediction(activeTab.value)
+      aiPrediction.value = aiRes.data
+      console.log('AI prediction loaded:', aiPrediction.value)
+    } catch (aiError) {
+      console.error('Error loading AI prediction:', aiError)
+      // AI prediction failure shouldn't affect draw data
+      aiPrediction.value = null
+    }
   } catch (e) {
     console.error('Error loading data:', e)
     // Use mock data if API fails
@@ -42,16 +52,25 @@ const generateMockData = () => {
     jackpotPool: 2150000000
   }
   
-  // Generate mock history
+  // Generate mock history with RANDOM data
   const history = []
   for (let i = 0; i < 10; i++) {
+    // Generate random red balls
+    const reds = []
+    while(reds.length < 6) {
+      const n = Math.floor(Math.random() * 33) + 1
+      const s = n < 10 ? '0'+n : ''+n
+      if(!reds.includes(s)) reds.push(s)
+    }
+    reds.sort()
+    
     history.push({
       id: i + 1,
       lotteryCode: activeTab.value,
       issueNumber: (2023135 - i).toString(),
       drawDate: '2023-11-21',
-      redBalls: '02,09,11,18,25,30',
-      blueBalls: '14',
+      redBalls: reds.join(','),
+      blueBalls: (Math.floor(Math.random() * 16) + 1).toString().padStart(2, '0'),
       jackpotPool: 2150000000
     })
   }
@@ -60,9 +79,28 @@ const generateMockData = () => {
   console.log('Mock data generated')
 }
 
-const selectIssue = (item) => {
-  latestDraw.value = item
+const selectIssue = async (item) => {
   showIssueSelector.value = false
+
+  try {
+    // Get the specific issue data from backend
+    const drawRes = await getDrawByIssue(activeTab.value, item.issueNumber)
+    latestDraw.value = drawRes.data
+
+    // Get AI prediction for this issue
+    try {
+      const aiRes = await getAiPrediction(activeTab.value)
+      aiPrediction.value = aiRes.data
+      console.log('AI prediction updated for issue:', item.issueNumber, aiPrediction.value)
+    } catch (aiError) {
+      console.error('Error loading AI prediction:', aiError)
+      aiPrediction.value = null
+    }
+  } catch (e) {
+    console.error('Error loading issue data:', e)
+    // Fallback to the item from history list
+    latestDraw.value = item
+  }
 }
 
 const switchTab = (tab) => {
@@ -92,8 +130,73 @@ const formatMoney = (amount) => {
   return (amount / 10000).toFixed(0) + '万'
 }
 
+const getBallClass = (lotteryType, ballType) => {
+  // 为不同彩票类型返回不同的球样式
+  if (lotteryType === 'fc3d') {
+    // 3D使用金色球
+    return 'gold'
+  } else if (lotteryType === 'kl8') {
+    // 快乐8使用橙色球
+    return 'orange'
+  } else {
+    // 双色球和大乐透使用红蓝球
+    return ballType === 'red' ? 'red' : 'blue'
+  }
+}
+
+const getPredictionParts = (prediction) => {
+  // 解析预测字符串，如 "01 09 16 17 35 + 06 07" 或 "08 15 18 20 25 31 + 01"
+  if (!prediction) {
+    return { redBalls: [], blueBalls: [] }
+  }
+
+  try {
+    const parts = prediction.split('+').map(p => p.trim())
+
+    if (parts.length === 2) {
+      // 有蓝球的情况（双色球、大乐透）
+      const redBalls = parts[0].split(/\s+/).filter(b => b.length > 0)
+      const blueBalls = parts[1].split(/\s+/).filter(b => b.length > 0)
+      return { redBalls, blueBalls }
+    } else {
+      // 没有蓝球的情况（3D、快乐8）
+      const redBalls = prediction.split(/\s+/).filter(b => b.length > 0)
+      return { redBalls, blueBalls: [] }
+    }
+  } catch (e) {
+    console.error('Error parsing prediction:', e)
+    return { redBalls: [], blueBalls: [] }
+  }
+}
+
+const analyzeWithThought = async () => {
+  if (!userThought.value.trim()) {
+    return
+  }
+
+  try {
+    isAnalyzing.value = true
+    showCot.value = true // 自动展开 COT
+
+    // 调用 AI 预测接口，传入用户的想法
+    const aiRes = await getAiPrediction(activeTab.value)
+    aiPrediction.value = aiRes.data
+
+    console.log('AI analysis completed with user thought:', userThought.value)
+
+    // 清空输入框
+    // userThought.value = ''
+  } catch (error) {
+    console.error('Error analyzing with AI:', error)
+    aiPrediction.value = null
+  } finally {
+    isAnalyzing.value = false
+  }
+}
+
 watch(activeTab, () => {
   loadData()
+  userThought.value = '' // 切换标签时清空输入
 })
 
 onMounted(() => {
@@ -124,10 +227,10 @@ onMounted(() => {
         :class="{ active: activeTab === 'dlt' }"
         @click="switchTab('dlt')"
       >大乐透</div>
-      <div 
-        class="tab" 
-        :class="{ active: activeTab === '3d' }"
-        @click="switchTab('3d')"
+      <div
+        class="tab"
+        :class="{ active: activeTab === 'fc3d' }"
+        @click="switchTab('fc3d')"
       >3D</div>
       <div 
         class="tab" 
@@ -176,8 +279,23 @@ onMounted(() => {
         
         <div class="balls-container">
           <div class="balls" v-if="latestDraw">
-            <span class="ball red" v-for="ball in latestDraw.redBalls.split(',')" :key="'r'+ball">{{ ball }}</span>
-            <span class="ball blue" v-if="latestDraw.blueBalls" v-for="ball in latestDraw.blueBalls.split(',')" :key="'b'+ball">{{ ball }}</span>
+            <span
+              class="ball"
+              :class="getBallClass(activeTab, 'red')"
+              v-for="ball in latestDraw.redBalls.split(',')"
+              :key="'r'+ball"
+            >{{ ball }}</span>
+            <span
+              class="ball-separator"
+              v-if="latestDraw.blueBalls && (activeTab === 'ssq' || activeTab === 'dlt')"
+            >+</span>
+            <template v-if="latestDraw.blueBalls">
+              <span
+                class="ball blue"
+                v-for="ball in latestDraw.blueBalls.split(',')"
+                :key="'b'+ball"
+              >{{ ball }}</span>
+            </template>
           </div>
           <div class="balls-placeholder" v-else>
             <span class="ball-skeleton" v-for="n in 7" :key="n"></span>
@@ -207,11 +325,52 @@ onMounted(() => {
         </div>
         
         <div class="prediction-content">
-          <div class="prediction-row" v-if="aiPrediction">
-            {{ aiPrediction.prediction }}
+          <div class="prediction-balls" v-if="aiPrediction">
+            <template v-if="getPredictionParts(aiPrediction.prediction).redBalls.length > 0">
+              <span
+                class="ball"
+                :class="getBallClass(activeTab, 'red')"
+                v-for="ball in getPredictionParts(aiPrediction.prediction).redBalls"
+                :key="'pred-r-'+ball"
+              >{{ ball }}</span>
+              <span
+                class="ball-separator"
+                v-if="getPredictionParts(aiPrediction.prediction).blueBalls.length > 0"
+              >+</span>
+              <span
+                class="ball blue"
+                v-for="ball in getPredictionParts(aiPrediction.prediction).blueBalls"
+                :key="'pred-b-'+ball"
+              >{{ ball }}</span>
+            </template>
+            <div class="prediction-fallback" v-else>
+              {{ aiPrediction.prediction }}
+            </div>
           </div>
           <div class="prediction-row loading" v-else>
             正在计算概率模型...
+          </div>
+        </div>
+
+        <!-- User Input Section -->
+        <div class="user-input-section">
+          <div class="input-wrapper">
+            <input
+              type="text"
+              class="thought-input"
+              v-model="userThought"
+              :disabled="isAnalyzing"
+              placeholder="说出你的想法让AI帮你分析趋势吧"
+              @keyup.enter="analyzeWithThought"
+            />
+            <button
+              class="analyze-button"
+              @click="analyzeWithThought"
+              :disabled="isAnalyzing || !userThought.trim()"
+            >
+              <span v-if="!isAnalyzing">🔮 AI分析</span>
+              <span v-else>分析中...</span>
+            </button>
           </div>
         </div>
 
@@ -468,6 +627,14 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+}
+
+.ball-separator {
+  font-size: 24px;
+  font-weight: bold;
+  color: #888;
+  margin: 0 4px;
 }
 
 .ball {
@@ -485,10 +652,12 @@ onMounted(() => {
 
 .ball.red { background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%); }
 .ball.blue { background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%); }
+.ball.gold { background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%); color: #333; }
+.ball.orange { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
 .ball.small { width: 28px; height: 28px; font-size: 12px; }
-.ball.red-dark { background-color: #5c0011; color: #ffccc7; border: 1px solid #ff4d4f; }
-.ball.orange { background-color: #613400; color: #ffe7ba; border: 1px solid #fa8c16; }
-.ball.blue-dark { background-color: #002766; color: #bae7ff; border: 1px solid #1890ff; }
+.ball.small.red-dark { background-color: #5c0011; color: #ffccc7; border: 1px solid #ff4d4f; }
+.ball.small.orange { background-color: #613400; color: #ffe7ba; border: 1px solid #fa8c16; }
+.ball.small.blue-dark { background-color: #002766; color: #bae7ff; border: 1px solid #1890ff; }
 
 .balls-placeholder {
   display: flex;
@@ -580,7 +749,25 @@ onMounted(() => {
 }
 
 .prediction-content {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+
+.prediction-balls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.prediction-fallback {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 2px;
+  text-align: center;
 }
 
 .prediction-row {
@@ -591,6 +778,73 @@ onMounted(() => {
   letter-spacing: 2px;
   text-align: center;
   text-shadow: 0 0 10px rgba(66, 185, 131, 0.3);
+}
+
+.user-input-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.thought-input {
+  flex: 1;
+  padding: 10px 14px;
+  background-color: #2c2c2c;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.thought-input::placeholder {
+  color: #666;
+}
+
+.thought-input:focus {
+  border-color: #42b983;
+  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.1);
+}
+
+.thought-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.analyze-button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #42b983 0%, #35a372 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(66, 185, 131, 0.3);
+}
+
+.analyze-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 185, 131, 0.4);
+}
+
+.analyze-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.analyze-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .cot-section {

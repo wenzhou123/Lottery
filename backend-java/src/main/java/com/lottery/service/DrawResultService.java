@@ -18,4 +18,8 @@ public class DrawResultService {
     public List<DrawResult> getHistory(String lotteryCode) {
         return drawResultMapper.findAllByCode(lotteryCode);
     }
+
+    public DrawResult getByIssue(String lotteryCode, String issueNumber) {
+        return drawResultMapper.findByCodeAndIssue(lotteryCode, issueNumber);
+    }
 }

@@ -1,3 +1,8 @@
 fastapi
 uvicorn
 numpy
+requests
+beautifulsoup4
+lxml
+pymysql
+python-dotenv
